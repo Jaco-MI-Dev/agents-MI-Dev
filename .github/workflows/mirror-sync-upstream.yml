@@ -62,10 +62,15 @@ jobs:
           gh api "repos/$REPO/actions/workflows" --paginate \
             --jq '.workflows[] | [.id, .path, .state] | @tsv' |
           while IFS=$'\t' read -r id path state; do
+            # GitHub-managed entries (e.g. Dependabot) can't be disabled here.
+            [[ "$path" == dynamic/* ]] && continue
             f="${path##*/}"
             [[ " $KEEP " == *" $f "* ]] && continue
             if [ "$state" = "active" ]; then
-              gh api -X PUT "repos/$REPO/actions/workflows/$id/disable"
-              echo "Disabled $path"
+              if gh api -X PUT "repos/$REPO/actions/workflows/$id/disable" >/dev/null; then
+                echo "Disabled $path"
+              else
+                echo "::warning::Could not disable $path"
+              fi
             fi
           done
