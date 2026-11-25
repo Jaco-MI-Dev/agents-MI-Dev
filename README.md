@@ -3,6 +3,8 @@
 <a id="agentic-plugin-marketplace"></a>
 <a id="claude-code-plugins-agents-and-skills"></a>
 
+**New:** A deterministic judge scored the Verified versions of two workflows. [See the scorecards](docs/verified/README.md) or join the [agents Verified waitlist](https://buy.polar.sh/polar_cl_yAj2XSCMpSY3vYTcoymlT102uGuJIAKgAI6134QYG9n). Verified is a paid product from Major7 Apps, founded by this repository’s maintainer.
+
 Use one collection of plugins, agents, skills, and commands across Claude Code, OpenAI Codex CLI, Cursor, OpenCode, Antigravity CLI, GitHub Copilot, and Pi. A harness is the coding tool that loads and runs the components.
 
 Contributors write each component once, in Markdown, in the Claude Code plugin format. Adapters under `tools/adapters/` generate the format each harness reads, map model aliases to that harness's models, and translate tool permissions where the harness supports them. CI regenerates the artifacts for every harness, validates them, and runs the OpenCode, Antigravity CLI, and Pi artifacts through their installed CLIs. The [capability matrix](docs/harnesses.md) lists what each harness supports, and [ARCHITECTURE.md](ARCHITECTURE.md) describes the design.
@@ -52,6 +54,15 @@ uv run --project plugins/plugin-eval plugin-eval score plugins/python-developmen
 ```
 
 The LLM judge and Monte Carlo layers are experimental and are not validated against human labels. Their scores describe model assessments and repeated simulations and do not prove that a task succeeds in a project. They require the optional `llm` dependencies. Model calls use `ANTHROPIC_API_KEY` when it is set and bill that API account. Otherwise they use your Claude Code login. See the [evaluation guide](docs/plugin-eval.md) for setup and limits.
+
+## Verified workflows
+
+Some workflows in this repo are being measured. Each one runs on a fixed set of test cases, several times per harness and model, and the results are published with confidence intervals. Runs repeat after each Claude Code release, and other coding tools join as their runs are wired up.
+
+- Method and current scores: [docs/verified](docs/verified/README.md)
+- Join the [waitlist for agents Verified](https://buy.polar.sh/polar_cl_yAj2XSCMpSY3vYTcoymlT102uGuJIAKgAI6134QYG9n), the tuned and re-tested versions.
+
+The free catalog stays MIT and keeps getting updates. Verified is a separate, paid layer sold by Major7 Apps, which this repository's maintainer founded. To support the free catalog directly, see [SPONSORING.md](SPONSORING.md).
 
 ## Quick start
 
@@ -153,6 +164,7 @@ The agent, skill, and command counts cover local source files. External plugins 
 | [Usage](docs/usage.md) and [tool setup](docs/harnesses.md) | Commands, examples, and installation |
 | [Architecture](ARCHITECTURE.md) and [design details](docs/architecture.md) | Source layout and adapters |
 | [Quality evaluation](docs/plugin-eval.md) and [CLI verification](docs/round-trip-results.md) | Checks and their limits |
+| [Verified scorecards](docs/verified/README.md) | Measured pass rates and how they are produced |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a change and [authoring conventions](docs/authoring.md) to write plugin content.
 
