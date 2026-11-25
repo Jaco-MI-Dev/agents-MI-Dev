@@ -1,0 +1,71 @@
+# Pulls wshobson/agents into this public mirror once a day.
+# Fetch-only from upstream: the upstream remote's push URL is disabled, and
+# this repo is not a GitHub fork, so no push or PR can go back upstream.
+name: Mirror - sync from upstream
+
+on:
+  schedule:
+    - cron: '17 9 * * *'   # daily 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write   # lets the last step switch off upstream's own workflows
+
+concurrency:
+  group: mirror-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Only runs in the public mirror, never in copies that inherit this file.
+    if: github.repository == 'Jaco-MI-Dev/agents-MI-Dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # PAT with Contents + Workflows write: GITHUB_TOKEN may not push
+          # commits that touch .github/workflows/, which upstream sometimes does.
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Merge upstream main
+        run: |
+          set -euo pipefail
+          git config user.name  "mirror-sync[bot]"
+          git config user.email "mirror-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/wshobson/agents.git
+          git remote set-url --push upstream PUSH_DISABLED
+          git fetch --no-tags upstream main
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date with upstream."
+            exit 0
+          fi
+
+          # --no-ff + [skip ci] keeps upstream's push-triggered workflows from
+          # firing on the sync commit. A conflict fails the job, and GitHub
+          # emails you so it can be resolved by hand.
+          git merge --no-ff --no-edit \
+            -m "Sync from wshobson/agents@$(git rev-parse --short upstream/main) [skip ci]" \
+            upstream/main
+          git push origin HEAD:main
+
+      - name: Keep non-mirror workflows disabled
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          KEEP: mirror-sync-upstream.yml mirror-close-prs.yml
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/workflows" --paginate \
+            --jq '.workflows[] | [.id, .path, .state] | @tsv' |
+          while IFS=$'\t' read -r id path state; do
+            f="${path##*/}"
+            [[ " $KEEP " == *" $f "* ]] && continue
+            if [ "$state" = "active" ]; then
+              gh api -X PUT "repos/$REPO/actions/workflows/$id/disable"
+              echo "Disabled $path"
+            fi
+          done

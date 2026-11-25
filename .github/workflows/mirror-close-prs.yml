@@ -1,0 +1,24 @@
+# This repo is a read-only mirror: close every pull request opened against it.
+# Safe with pull_request_target because the PR's code is never checked out.
+name: Mirror - close incoming PRs
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    if: github.repository == 'Jaco-MI-Dev/agents-MI-Dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr close "$PR" -R "$REPO" --comment \
+            "This repository is an automated read-only mirror of https://github.com/wshobson/agents and does not accept pull requests. Please open your PR there instead."
